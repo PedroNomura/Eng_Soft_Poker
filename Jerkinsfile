@@ -1,15 +1,36 @@
 pipeline {
-	agent ant
-	stages {
-		stage("Build"){
-			steps{
-				echo "Building ..."
-			}
-		}
-		stage("Test"){
-			steps{
-				echo "Testing ..."
-			}
-		}
-	}
+    agent any
+
+    environment {
+        VIRTUAL_ENV = 'venv'
+        PYTHON = "${VIRTUAL_ENV}/bin/python"
+    }
+
+    stages {
+        stage('Clone Repository') {
+            steps {
+                git 'https://github.com/PedroNomura/Eng_Soft_Poker.git'
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh 'python3 -m venv venv'
+                sh './venv/bin/pip install -r requirements.txt'
+                sh './venv/bin/pip install pytest'  // Garante que pytest será instalado
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                sh './venv/bin/pytest --junitxml=test-reports/results.xml'
+            }
+        }
+    }
+
+    post {
+        always {
+            junit '**/test-reports/*.xml'
+        }
+    }
 }
