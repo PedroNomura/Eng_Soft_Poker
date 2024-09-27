@@ -1,5 +1,5 @@
 import pytest
-frrom poker-v0 import criar_partida, listar_partidas, iniciar_partida, realizar_acao
+from poker import criar_partida, listar_partidas, iniciar_partida, realizar_acao
 
 def test_criar_partida():
     sala = criar_partida("Teste Poker", big_blind=50, small_blind=25)
