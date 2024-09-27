@@ -1,5 +1,7 @@
 import poker
 
+salas = []
+
 def criar_partida(nome_sala, big_blind, small_blind):
     sala = PokerRoom(name=nome_sala, seats=4, big_blind=big_blind, small_blind=small_blind)
     salas.append(sala)
