@@ -19,8 +19,10 @@ def iniciar_partida(indice_sala):
         sala = salas[indice_sala - 1]
         sala.start()
         print(f"Partida '{sala.name}' iniciada com sucesso!")
+        return True
     except IndexError:
         print(f"Erro: Não existe uma partida no índice {indice_sala}.")
+        return False
 
 def realizar_acao(indice_sala, indice_jogador, acao, valor=None):
     try:
@@ -30,13 +32,18 @@ def realizar_acao(indice_sala, indice_jogador, acao, valor=None):
         if acao == 'bet' and valor:
             jogador.bet(valor)
             print(f"Jogador {jogador.name} apostou {valor}.")
+            return True
         elif acao == 'check':
             jogador.check()
             print(f"Jogador {jogador.name} deu check.")
+            return True
         elif acao == 'fold':
             jogador.fold()
             print(f"Jogador {jogador.name} deu fold.")
+            return True
         else:
             print("Ação inválida ou valor não especificado.")
+            return False
     except IndexError:
         print(f"Erro: Não existe a partida ou jogador no índice fornecido.")
+        return False
