@@ -1,4 +1,5 @@
-from poker.room import PokerRoom
+import poker
+
 
 salas = []
 
