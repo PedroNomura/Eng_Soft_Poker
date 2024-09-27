@@ -1,1 +1,3 @@
 pytest>=6.0
+poker>=2.0
+requests>=2.0
