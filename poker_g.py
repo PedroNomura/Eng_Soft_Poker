@@ -10,6 +10,10 @@ class PokerRoom:
 
     def start(self):
         print(f"A partida {self.name} foi iniciada.")
+    
+    def adicionar_jogador(self, jogador):
+        self.players.append(jogador)  # Adiciona um jogador à sala
+
 
 
 
