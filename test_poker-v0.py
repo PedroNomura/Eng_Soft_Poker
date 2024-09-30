@@ -1,37 +1,57 @@
 import pytest
-from poker_g import criar_partida, realizar_acao, PokerRoom
+import requests
 
-@pytest.fixture
-def setup_salas():
-    global salas
-    salas = []
-    sala = criar_partida("Teste Poker", big_blind=50, small_blind=25)
-    salas.append(sala)
+# Certifique-se de que o código das classes Player, PokerRoom e funções estejam no arquivo poker.py
+from possivel_com_API import Player, PokerRoom, salas, listar_partidas, iniciar_partida
 
-    # Adicione jogadores à sala para os testes
-    sala.adicionar_jogador("Jogador 1")  # Adiciona um jogador
-    sala.adicionar_jogador("Jogador 2")  # Adiciona outro jogador
+# Teste para criar uma sala e garantir que o jogador seja adicionado corretamente
+def test_criar_sala():
+    jogador = Player('victor', 1000)
+    sala = jogador.criar_sala('sala1', 5, 10)
+    
+    # Verifica se a sala foi criada corretamente
+    assert sala.nome == 'sala1'
+    assert sala.small_blind == 5
+    assert sala.big_blind == 10
+    assert len(sala.players) == 1
+    assert jogador in sala.players
+    assert jogador.indice_sala == 0
 
-    return sala
+# Teste para entrar em uma sala existente
+def test_entrar_sala():
+    jogador2 = Player('joao', 2000)
+    entrou = jogador2.entrar_sala('sala1')
+    
+    assert entrou == True
+    assert jogador2 in salas[0].players
 
-def test_criar_partida(setup_salas):
-    sala = setup_salas
-    assert sala.name == "Teste Poker"
-    assert sala.big_blind == 50
-    assert sala.small_blind == 25
-    assert len(salas) == 1
+# Teste para coletar cartas de um jogador
+def test_coletar_cartas():
+    jogador = Player('victor', 1000)
+    jogador.coletar_cartas('230huq5ecnzj')  # Use um ID de baralho válido se necessário
+    
+    assert len(jogador.cards) == 2
+    assert isinstance(jogador.cards[0], dict)  # Verifica se as cartas são dicionários
+    assert 'value' in jogador.cards[0]  # Verifica se a carta possui a chave 'value'
 
-def test_realizar_acao_check(setup_salas):
-    sala = setup_salas
-    # Verifique se há jogadores na sala antes de realizar ações
-    assert hasattr(sala, 'players') and len(sala.players) > 0  # Certifique-se de que a lógica está correta
+# Teste para iniciar uma partida
+def test_iniciar_partida():
+    # Inicia a partida
+    partida_iniciada = iniciar_partida(0)
+    
+    assert partida_iniciada == True
+    assert len(salas[0].players) == 2
+    assert len(salas[0].flop) == 3  # Verifica se o flop foi distribuído
+    assert len(salas[0].turn) == 1  # Verifica se o turn foi distribuído
+    assert len(salas[0].river) == 1  # Verifica se o river foi distribuído
 
-def test_realizar_acao_bet(setup_salas):
-    sala = setup_salas
-    # Certifique-se de que há jogadores na sala
-    assert hasattr(sala, 'players') and len(sala.players) > 0  # Verifique se há jogadores
+# Teste para listar as partidas
+def test_listar_partidas():
+    jogador = Player('victor', 1000)
+    jogador.criar_sala('sala2', 5, 10)
+    
+    partidas = listar_partidas()
+    
+    assert 2 == len(partidas)
+    assert partidas[1].nome == 'sala2'
 
-def test_realizar_acao_fold(setup_salas):
-    sala = setup_salas
-    # Certifique-se de que há jogadores na sala
-    assert hasattr(sala, 'players') and len(sala.players) > 0  # Verifique se há jogadores
