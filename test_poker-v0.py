@@ -26,6 +26,9 @@ def test_entrar_sala():
 
 # Teste para coletar cartas de um jogador
 def test_coletar_cartas():
+    jogador2 = Player('joao', 2000)
+    deck = requests.get(https://www.deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1).json()['deck_id']
+    jogador2.coletar_cartas(deck)
     assert len(jogador2.cards) == 2
     assert isinstance(jogador2.cards[0], dict)  # Verifica se as cartas são dicionários
     assert 'value' in jogador2.cards[0]  # Verifica se a carta possui a chave 'value'
