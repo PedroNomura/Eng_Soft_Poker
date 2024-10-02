@@ -4,11 +4,9 @@ import requests
 # Certifique-se de que o código das classes Player, PokerRoom e funções estejam no arquivo poker.py
 from pokerV0 import Player, PokerRoom, salas, listar_partidas, iniciar_partida
 jogador = Player('victor', 1000)
+sala = jogador.criar_sala('sala1', 5, 10)
 # Teste para criar uma sala e garantir que o jogador seja adicionado corretamente
 def test_criar_sala():
-    jogador = Player('victor', 1000)
-    sala = jogador.criar_sala('sala1', 5, 10)
-    
     # Verifica se a sala foi criada corretamente
     assert sala.nome == 'sala1'
     assert sala.small_blind == 5
