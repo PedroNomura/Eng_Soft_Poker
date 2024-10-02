@@ -3,10 +3,11 @@ import requests
 
 # Certifique-se de que o código das classes Player, PokerRoom e funções estejam no arquivo poker.py
 from pokerV0 import Player, PokerRoom, salas, listar_partidas, iniciar_partida
-jogador = Player('victor', 1000)
-sala = jogador.criar_sala('sala1', 5, 10)
+
 # Teste para criar uma sala e garantir que o jogador seja adicionado corretamente
 def test_criar_sala():
+    jogador = Player('victor', 1000)
+    sala = jogador.criar_sala('sala1', 5, 10)
     # Verifica se a sala foi criada corretamente
     assert sala.nome == 'sala1'
     assert sala.small_blind == 5
@@ -25,9 +26,9 @@ def test_entrar_sala():
 
 # Teste para coletar cartas de um jogador
 def test_coletar_cartas():
-    assert len(jogador.cards) == 2
-    assert isinstance(jogador.cards[0], dict)  # Verifica se as cartas são dicionários
-    assert 'value' in jogador.cards[0]  # Verifica se a carta possui a chave 'value'
+    assert len(jogador2.cards) == 2
+    assert isinstance(jogador2.cards[0], dict)  # Verifica se as cartas são dicionários
+    assert 'value' in jogador2.cards[0]  # Verifica se a carta possui a chave 'value'
 
 # Teste para iniciar uma partida
 def test_iniciar_partida():
