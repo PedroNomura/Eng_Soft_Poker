@@ -27,11 +27,14 @@ def test_entrar_sala():
 # Teste para coletar cartas de um jogador
 def test_coletar_cartas():
     jogador = Player('victor', 1000)
-    jogador.coletar_cartas('230huq5ecnzj')  # Use um ID de baralho válido se necessário
+    jogador.coletar_cartas('mmtzxpyktzir')  # Use um ID de baralho válido se necessário
     
     assert len(jogador.cards) == 2
     assert isinstance(jogador.cards[0], dict)  # Verifica se as cartas são dicionários
     assert 'value' in jogador.cards[0]  # Verifica se a carta possui a chave 'value'
+    requests.get(f"https://deckofcardsapi.com/api/deck/mmtzxpyktzir/return/")
+    requests.get(f"https://deckofcardsapi.com/api/deck/mmtzxpyktzir/shuffle/")
+
 
 # Teste para iniciar uma partida
 def test_iniciar_partida():
