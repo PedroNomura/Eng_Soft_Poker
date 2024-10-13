@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mesa</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="mesa-jogo">
+        <button class="voltar" onclick="voltarMesas()">Voltar</button>
+        <h1>Mesa</h1>
+        <div class="mesa-visual">
+            <div class="cadeira" onclick="sentar(1)" id="cadeira1">1</div>
+            <div class="cadeira" onclick="sentar(2)" id="cadeira2">2</div>
+            <div class="cadeira" onclick="sentar(3)" id="cadeira3">3</div>
+            <div class="cadeira" onclick="sentar(4)" id="cadeira4">4</div>
+            <div class="cadeira" onclick="sentar(5)" id="cadeira5">4 rodada</div>
+            <div class="cadeira" onclick="sentar(6)" id="cadeira6">6</div>
+            <div class="cadeira" onclick="sentar(7)" id="cadeira7">flop</div>
+            <div class="cadeira" onclick="sentar(8)" id="cadeira8">7</div>
+            <div class="cadeira" onclick="sentar(9)" id="cadeira9">8</div>
+            <div class="cadeira" onclick="sentar(10)" id="cadeira10">9</div>
+        </div>
+    </div>
+
+    <script>
+        function sentar(posicao) {
+            const icone = 'lugar ocupado ';  // Ícone que representa um jogador sentado
+            document.getElementById(`cadeira${posicao}`).innerHTML = icone;
+        }
+
+        function voltarMesas() {
+            window.location.href = 'mesas.html';
+        }
+    </script>
+</body>
+</html>
+
+
