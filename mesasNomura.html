@@ -4,21 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mesas Online</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
     <div id="mesas-online">
         <h1>Mesas Online</h1>
-        {% for sala in salas %}
         <div id="mesas-container">
+            {% for sala in salas %}
             <div class="mesa-item">
-                <a id="mesa" href="mesa.html">Entrar</a>
+                <a id="mesa" href="{{ url_for('entrarMesa') }}">Entrar</a>
                 <span>{{ sala.nome }}</span>
                 <span>{{ sala.seats }}</span>
                 <span>{{ sala.small_blind }} {{ sala.big_blind }}</span>
             </div>
+            {% endfor %}
         </div>
-        {% endfor %}
     </div>
     <div>
         <form method="post">
@@ -38,11 +38,5 @@
         </form>
     </div>
     
-
-    <script>
-        function abrirMesa(mesaId) {
-            window.location.href = `mesa.html?mesaId=${mesaId}`;
-        }
-    </script>
 </body>
 </html>
