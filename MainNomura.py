@@ -18,6 +18,14 @@ def home():
 
     return render_template('mesas.html', salas=salas, jogador=jogador)
 
+@app.route('/mesa')
+def entrarMesa():
+    return render_template('mesa.html')
+
+@app.route('/mesas')
+def mesas():
+    return render_template('mesas.html', salas=salas, jogador=jogador)
+
 
 
 class Player:
