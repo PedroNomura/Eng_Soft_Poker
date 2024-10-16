@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mesa</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
     <div id="mesa-jogo">
-        <button class="voltar" onclick="voltarMesas()">Voltar</button>
+        <button class="voltar" onclick="window.location.href='{{ url_for('mesas') }}'">Voltar</button>
         <h1>Mesa</h1>
         <div class="mesa-visual">
             <div class="cadeira" onclick="sentar(1)" id="cadeira1">1</div>
@@ -29,12 +29,6 @@
             const icone = 'lugar ocupado ';  // Ícone que representa um jogador sentado
             document.getElementById(`cadeira${posicao}`).innerHTML = icone;
         }
-
-        function voltarMesas() {
-            window.location.href = 'mesas.html';
-        }
     </script>
 </body>
 </html>
-
-
