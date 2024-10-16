@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mesas Online</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="mesas-online">
+        <h1>Mesas Online</h1>
+        {% for sala in salas %}
+        <div id="mesas-container">
+            <div class="mesa-item">
+                <a id="mesa" href="mesa.html">Entrar</a>
+                <span>{{ sala.nome }}</span>
+                <span>{{ sala.seats }}</span>
+                <span>{{ sala.small_blind }} {{ sala.big_blind }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <div>
+        <form method="post">
+            <label for="nome">Nome da sala:</label>
+            <input type="text" id="nome" name="nome" required>
+            <br><br>
+            <label for="tamanho">Tamanho da sala:</label>
+            <input type="number" id="tamanho" name="tamanho" required>
+            <br><br>
+            <label for="small">Valor do small blind:</label>
+            <input type="number" id="small" name="small" required>
+            <br><br>
+            <label for="big">Valor do big blind:</label>
+            <input type="number" id="big" name="big" required>
+            <br><br>
+            <button type="submit">Criar sala</button>
+        </form>
+    </div>
+    
+
+    <script>
+        function abrirMesa(mesaId) {
+            window.location.href = `mesa.html?mesaId=${mesaId}`;
+        }
+    </script>
+</body>
+</html>
