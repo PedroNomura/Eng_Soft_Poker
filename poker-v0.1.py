@@ -84,47 +84,33 @@ class PokerRoom:
             for card in card_strings:
                 carta = [(biblis[card[0]],biblis[card[1]])]
                 cartas_jogador += carta
-            print(cartas_jogador.handenum)
             if vencedor is None or cartas_jogador > cartas_vencedor:
                 cartas_vencedor = cartas_jogador
                 vencedor = player
         return vencedor
 
 
-    def start(self): # working process
-        print(f"deck_id: {self.deck}")
-        BB = self.players[len(self.players)-1]
-        for i, player in enumerate(self.players):
-            player.coletar_cartas(self.deck)
-            print(f"player {i}:\n {player.cards[0]['code']} {player.cards[1]['code']}\n\n")
-
-        for player in self.players:
-            player.realizar_acao('check')
+    def iniciar_rodada(self):
+        # Verifica se há 2 ou mais jogadores na sala
+        if len(self.players) < 2:
+            return None
         self.flop = requests.get(f"https://deckofcardsapi.com/api/deck/{self.deck}/draw/?count=3").json()['cards']
-        flopis = ""
-        for card in self.flop:
-            flopis += card['code'] + ' '
-        print(f"flop: {flopis}\n\n")
+        print(f"Flop: {self.flop}")
 
-        for player in self.players:
-            player.realizar_acao('check')
         self.turn = requests.get(f"https://deckofcardsapi.com/api/deck/{self.deck}/draw/?count=1").json()['cards']
-        print(f"turn: {self.turn[0]['code']}\n\n")
+        print(f"Turn: {self.turn}")
 
-        for player in self.players:
-            player.realizar_acao('check')
         self.river = requests.get(f"https://deckofcardsapi.com/api/deck/{self.deck}/draw/?count=1").json()['cards']
-        print(f"river: {self.river[0]['code']}\n\n")
+        print(f"River: {self.river}")
 
+        # Após o river, verificar o vencedor
         vencedor = self.verificar_ganhador()
         if vencedor:
-            print(f"Vencedor da rodada é {vencedor.nome}")
+            print(f"O vencedor é {vencedor.nome}!")
         else:
-            print("Não foi possível determinar um vencedor.")
-        self.players = self.players[1:] +[self.players[0]]
-        self.deck = requests.get(f"https://deckofcardsapi.com/api/deck/{self.deck}/return/")
-        self.deck = requests.get(f"https://deckofcardsapi.com/api/deck/{self.deck}/shuffle/")
-        return True
+            print("Erro ao determinar o vencedor.")
+
+        return vencedor
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------
 def listar_partidas():
