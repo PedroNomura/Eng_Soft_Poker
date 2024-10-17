@@ -1,2 +1,4 @@
 pytest>=6.0
 requests>=2.0
+pokerlib>=2.2.7
+flask>=3.0.3
