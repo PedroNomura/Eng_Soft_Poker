@@ -16,6 +16,7 @@ class Player:
         self.fichas = chips
         self.cards = []
         self.indice_sala = -1
+        self.estado = -1
 
     def criar_sala(self, nome_sala, small_blind, big_blind):
         nova_sala = PokerRoom(nome_sala, 4,small_blind, big_blind)
@@ -38,14 +39,23 @@ class Player:
 
     def realizar_acao(self, acao, valor=None):
         sala = salas[self.indice_sala]
-        if acao == 'bet':
+        if acao == 'BET':
+            self.estado = 1
+            self.fichas -= valor
             sala.pot += valor
-            print(f"Jogador {self.nome} apostou {valor}.")
-        elif acao == 'check':
-            print(f"Jogador {self.nome} deu check.")
-        elif acao == 'fold':
-            print(f"Jogador {self.nome} deu fold.")
-        return True  # Retorne True se a ação for realizada com sucesso
+        
+        elif acao == 'CALL':
+            self.estado = 1
+            self.fichas -= valor
+            sala.pot += valor
+        
+        elif acao == 'FOLD':
+            self.estado = -1
+
+        elif acao == 'CHECK':
+            self.estado = 1
+        
+        return True
 # ---------------------------------------------------------------------------------------------------------------------------------------------
 class PokerRoom:
     def __init__(self, nome, seats, small_blind, big_blind):
@@ -54,6 +64,7 @@ class PokerRoom:
         self.big_blind = big_blind
         self.small_blind = small_blind
         self.players = []
+
 
         self.deck = requests.get("https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1").json()['deck_id']
         self.pot = 0
@@ -74,41 +85,120 @@ class PokerRoom:
             '0': Rank.TEN, 'J': Rank.JACK, 'Q': Rank.QUEEN,
             'K': Rank.KING, 'S': Suit.SPADE, 'C':Suit.CLUB, 'H': Suit.HEART, 'D' : Suit.DIAMOND
         }
-        vencedor = None
-        cartas_vencedor = None
         cartas_mesa = self.flop + self.turn + self.river
-        for player in self.players:
+        vetor_resposta = []
+
+        for idx,player in enumerate(self.players):
             all_cards = player.cards + cartas_mesa
             card_strings = [card['code'] for card in all_cards]
             cartas_jogador = HandParser([])
             for card in card_strings:
                 carta = [(biblis[card[0]],biblis[card[1]])]
                 cartas_jogador += carta
-            if vencedor is None or cartas_jogador > cartas_vencedor:
-                cartas_vencedor = cartas_jogador
-                vencedor = player
-        return vencedor
+            vetor_resposta[idx] = (cartas_jogador, player.nome)
+        return vetor_resposta
 
+    def verifica_unico_jogador(self):
+        jogadores_ativos = [player for player in self.players if player.estado != -1]
+        if len(jogadores_ativos) == 1:
+            return jogadores_ativos[0]
+        return None
 
     def iniciar_rodada(self):
         # Verifica se há 2 ou mais jogadores na sala
         if len(self.players) < 2:
             return None
+        for p in range(len(self.players)):
+            self.players[p].estado = 0 
+            self.players[p].coletar_cartas(self.deck) 
+            print(self.players[p].cards)
+            if p == len(self.players) - 1:
+                self.players[p].fichas -= self.big_blind
+                self.pot += self.big_blind
+                print(f"BB:{self.players[p].nome}")
+        
+            elif p == len(self.players) - 2:
+                self.players[p].fichas -= self.small_blind
+                self.pot += self.small_blind
+                print(f"SB:{self.players[p].nome}")
+
+
+        # aqui pega no front ação de cada player
+        # tem o problema do BB e SB aqui (tipo ele não compensa o CALL do SB) porem isso funciona para o FLOP, RIVER e TURN, não sei como resolver se maneira inteligente
+        # importante dizer que aqui vale apena fazer um peso para cada tipo de player pq o BB não da CALL, e o resto não da CHECK
+        # todo jogador tem 3 ações FOLD, CALL/CHECK, BET
+        # site que eu vi legal pra "roubar o css" == https://www.247freepoker.com/ (◠‿◠)
+        maior_aposta = self.big_blind
+
+        while any(player.estado == 0 for player in self.players):
+            for player in self.players:
+                if player.estado == 0:
+                    acao = "" 
+                    while acao not in ["CALL", "BET", "FOLD", "CHECK"]:
+                        acao = input(f"{player.nome}, escolha sua ação (CALL, BET, FOLD, CHECK): ").upper()
+
+                        if acao == "BET":
+                            valor = int(input(f"Digite o valor da aposta, {player.nome}: "))
+                            maior_aposta += valor
+                            player.realizar_acao(acao, maior_aposta)
+                            for p in self.players:
+                                if p != player and p.estado != -1:
+                                    p.estado = 0
+                            print(f"Jogador {player.nome} apostou {valor}. Maior aposta: {maior_aposta}.")
+
+                        elif acao == "CALL":
+                            player.realizar_acao(acao, maior_aposta)
+                            print(f"Jogador {player.nome} deu CALL na aposta de {maior_aposta}.")
+
+                        elif acao == "FOLD":
+                            player.realizar_acao(acao)
+                            print(f"Jogador {player.nome} deu FOLD.")
+                            vencedor = self.verifica_unico_jogador()
+                            if vencedor is not None:
+                                print(f"O vencedor é {vencedor.nome}!")
+                                return vencedor
+                        
+                        elif acao == "CHECK":
+                            player.realizar_acao(acao)
+                            print(f"Jogador {player.nome} deu CHECK.")
+        
+        vencedor = self.verifica_unico_jogador()
+        if vencedor is not None:
+            print(f"O vencedor é {vencedor.nome}!")
+            return vencedor
+
         self.flop = requests.get(f"https://deckofcardsapi.com/api/deck/{self.deck}/draw/?count=3").json()['cards']
-        print(f"Flop: {self.flop}")
+        print(f"Flop: {self.flop}\n\n")
+
+        # logica de pegar tudo os inputs
+
+        vencedor = self.verifica_unico_jogador()
+        if vencedor is not None:
+            print(f"O vencedor é {vencedor.nome}!")
+            return vencedor
 
         self.turn = requests.get(f"https://deckofcardsapi.com/api/deck/{self.deck}/draw/?count=1").json()['cards']
-        print(f"Turn: {self.turn}")
+        print(f"Turn: {self.turn}\n\n")
+
+        # logica de pegar tudo os inputs
+
+        vencedor = self.verifica_unico_jogador()
+        if vencedor is not None:
+            print(f"O vencedor é {vencedor.nome}!")
+            return vencedor
 
         self.river = requests.get(f"https://deckofcardsapi.com/api/deck/{self.deck}/draw/?count=1").json()['cards']
-        print(f"River: {self.river}")
+        print(f"River: {self.river}\n\n")
+
+        # logica de pegar tudo os inputs
+
+        vencedor = self.verifica_unico_jogador()
+        if vencedor is not None:
+            print(f"O vencedor é {vencedor.nome}!")
+            return vencedor
 
         # Após o river, verificar o vencedor
-        vencedor = self.verificar_ganhador()
-        if vencedor:
-            print(f"O vencedor é {vencedor.nome}!")
-        else:
-            print("Erro ao determinar o vencedor.")
+        vencedor = sorted(self.verificar_ganhador(), reverse=True)
 
         return vencedor
 
@@ -142,5 +232,5 @@ jogador = Player('victor', 1000)
 jogador2 = Player('joao',2000)
 sala_jogador = jogador.criar_sala('sala1',5,10)
 jogador2.entrar_sala("sala1")
-sala_jogador.start()
+sala_jogador.iniciar_rodada()
 
