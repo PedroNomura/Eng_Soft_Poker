@@ -17,12 +17,15 @@ class Player:
         self.cards = []
         self.indice_sala = -1
         self.estado = -1
+        self.e_bb = False # atributos novos
+        self.e_sb = False # atributos novos
+        self.aposta = 0 # atributos novos
 
     def criar_sala(self, nome_sala, small_blind, big_blind):
         nova_sala = PokerRoom(nome_sala, 4,small_blind, big_blind)
         salas.append(nova_sala)
-        self.indice_sala = len(salas) - 1  # Atribui o índice correto ao jogador
-        nova_sala.players.append(self)  # Adiciona o jogador à sala
+        self.indice_sala = len(salas) - 1 
+        nova_sala.players.append(self) 
         return nova_sala
 
     def entrar_sala(self, nome_sala):
@@ -37,25 +40,36 @@ class Player:
         url = f"https://deckofcardsapi.com/api/deck/{deck_id}/draw/?count=2"
         self.cards = requests.get(url).json()['cards']
 
+
+    # função modificada
     def realizar_acao(self, acao, valor=None):
         sala = salas[self.indice_sala]
         if acao == 'BET':
             self.estado = 1
-            self.fichas -= valor
-            sala.pot += valor
+            self.aposta += valor
         
         elif acao == 'CALL':
             self.estado = 1
-            self.fichas -= valor
-            sala.pot += valor
+            self.aposta = valor
         
         elif acao == 'FOLD':
             self.estado = -1
+            self.fichas -= self.posta
+            sala.pot += self.aposta 
+            self.aposta = 0
 
         elif acao == 'CHECK':
             self.estado = 1
+            self.aposta = 0
         
         return True
+
+    # função nova
+    def aposta_pot(self):
+        sala = salas[self.indice_sala]
+        self.fichas -= self.aposta
+        sala.pot += self.aposta
+        self.aposta = 0
 # ---------------------------------------------------------------------------------------------------------------------------------------------
 class PokerRoom:
     def __init__(self, nome, seats, small_blind, big_blind):
@@ -95,7 +109,7 @@ class PokerRoom:
             for card in card_strings:
                 carta = [(biblis[card[0]],biblis[card[1]])]
                 cartas_jogador += carta
-            vetor_resposta[idx] = (cartas_jogador, player.nome)
+            vetor_resposta.append((cartas_jogador.handenum, player.nome)) # arrumei aqui
         return vetor_resposta
 
     def verifica_unico_jogador(self):
@@ -104,64 +118,83 @@ class PokerRoom:
             return jogadores_ativos[0]
         return None
 
+    # função nova 
+    def rodada_aposta(self,maior):
+        while any(player.estado == 0 for player in self.players):
+            for player in self.players:
+                if player.estado == 0:
+                    acao = "" 
+                    print(f"jogador {player.nome}")
+                    while acao not in ["CALL", "BET", "FOLD", "CHECK"]:
+                        acao = input("ação: ").upper()
+                        
+                        if acao == "BET":
+                            valor = int(input("valor: "))
+                            player.realizar_acao("BET",valor)
+                            maior += valor
+
+                            # teste (parece correto)
+                            aux = maior
+                            if player.e_bb:
+                                aux = maior - self.big_blind
+                            if player.e_sb:
+                                aux = maior - self.small_blind
+                            player.realizar_acao("CALL",aux)
+                            # fim de teste
+
+                            for p in self.players:
+                                if p != player and p.estado != -1:
+                                    p.estado = 0
+                            print(maior)
+                        elif acao == "CALL":
+                            aux = maior
+                            if player.e_bb:
+                                aux = maior - self.big_blind
+                            if player.e_sb:
+                                aux = maior - self.small_blind
+                            player.realizar_acao("CALL",aux)
+                        elif acao == "FOLD":
+                            player.realizar_acao("FOLD")
+                        elif acao == "CHECK":
+                            player.realizar_acao("CHECK")
+
+
+        for player in self.players:
+            player.aposta_pot()
+            player.estado = 0
+            print(f"{player.nome} ficou {player.fichas}")
+
     def iniciar_rodada(self):
-        # Verifica se há 2 ou mais jogadores na sala
+        # Verifica se há 2 ou mais jogadores na sala não precisa no final
         if len(self.players) < 2:
             return None
+
+        # distribui as cartas para cada player e atribui o estado 0 que indica "a jogar"
         for p in range(len(self.players)):
-            self.players[p].estado = 0 
+            self.players[p].estado = 0
             self.players[p].coletar_cartas(self.deck) 
             print(self.players[p].cards)
+
+            # define que o ultimo é o BB
             if p == len(self.players) - 1:
                 self.players[p].fichas -= self.big_blind
+                self.players[p].e_bb = True 
                 self.pot += self.big_blind
                 print(f"BB:{self.players[p].nome}")
-        
+
+            # define que o penultimo é o SB
             elif p == len(self.players) - 2:
                 self.players[p].fichas -= self.small_blind
+                self.players[p].e_sb = True
                 self.pot += self.small_blind
                 print(f"SB:{self.players[p].nome}")
 
 
         # aqui pega no front ação de cada player
-        # tem o problema do BB e SB aqui (tipo ele não compensa o CALL do SB) porem isso funciona para o FLOP, RIVER e TURN, não sei como resolver se maneira inteligente
-        # importante dizer que aqui vale apena fazer um peso para cada tipo de player pq o BB não da CALL, e o resto não da CHECK
-        # todo jogador tem 3 ações FOLD, CALL/CHECK, BET
         # site que eu vi legal pra "roubar o css" == https://www.247freepoker.com/ (◠‿◠)
-        maior_aposta = self.big_blind
-
-        while any(player.estado == 0 for player in self.players):
-            for player in self.players:
-                if player.estado == 0:
-                    acao = "" 
-                    while acao not in ["CALL", "BET", "FOLD", "CHECK"]:
-                        acao = input(f"{player.nome}, escolha sua ação (CALL, BET, FOLD, CHECK): ").upper()
-
-                        if acao == "BET":
-                            valor = int(input(f"Digite o valor da aposta, {player.nome}: "))
-                            maior_aposta += valor
-                            player.realizar_acao(acao, maior_aposta)
-                            for p in self.players:
-                                if p != player and p.estado != -1:
-                                    p.estado = 0
-                            print(f"Jogador {player.nome} apostou {valor}. Maior aposta: {maior_aposta}.")
-
-                        elif acao == "CALL":
-                            player.realizar_acao(acao, maior_aposta)
-                            print(f"Jogador {player.nome} deu CALL na aposta de {maior_aposta}.")
-
-                        elif acao == "FOLD":
-                            player.realizar_acao(acao)
-                            print(f"Jogador {player.nome} deu FOLD.")
-                            vencedor = self.verifica_unico_jogador()
-                            if vencedor is not None:
-                                print(f"O vencedor é {vencedor.nome}!")
-                                return vencedor
-                        
-                        elif acao == "CHECK":
-                            player.realizar_acao(acao)
-                            print(f"Jogador {player.nome} deu CHECK.")
+        self.rodada_aposta(self.big_blind)
         
+
         vencedor = self.verifica_unico_jogador()
         if vencedor is not None:
             print(f"O vencedor é {vencedor.nome}!")
@@ -170,37 +203,25 @@ class PokerRoom:
         self.flop = requests.get(f"https://deckofcardsapi.com/api/deck/{self.deck}/draw/?count=3").json()['cards']
         print(f"Flop: {self.flop}\n\n")
 
-        # logica de pegar tudo os inputs
-
-        vencedor = self.verifica_unico_jogador()
-        if vencedor is not None:
-            print(f"O vencedor é {vencedor.nome}!")
-            return vencedor
+        self.rodada_aposta(0)
 
         self.turn = requests.get(f"https://deckofcardsapi.com/api/deck/{self.deck}/draw/?count=1").json()['cards']
         print(f"Turn: {self.turn}\n\n")
 
-        # logica de pegar tudo os inputs
-
-        vencedor = self.verifica_unico_jogador()
-        if vencedor is not None:
-            print(f"O vencedor é {vencedor.nome}!")
-            return vencedor
+        self.rodada_aposta(0)
 
         self.river = requests.get(f"https://deckofcardsapi.com/api/deck/{self.deck}/draw/?count=1").json()['cards']
         print(f"River: {self.river}\n\n")
 
-        # logica de pegar tudo os inputs
+        self.rodada_aposta(0)
 
-        vencedor = self.verifica_unico_jogador()
-        if vencedor is not None:
-            print(f"O vencedor é {vencedor.nome}!")
-            return vencedor
-
-        # Após o river, verificar o vencedor
+        # Após o river, verificar o vencedor (tem que dar as fichas que estão em pot para o vencedor so que tem a parada do empate)
         vencedor = sorted(self.verificar_ganhador(), reverse=True)
+        print(vencedor)
 
-        return vencedor
+        BB = self.players.pop()
+        self.players.insert(0,BB)
+        self.iniciar_rodada()
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------
 def listar_partidas():
