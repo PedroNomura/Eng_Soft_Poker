@@ -40,6 +40,11 @@ class Player:
         url = f"https://deckofcardsapi.com/api/deck/{deck_id}/draw/?count=2"
         self.cards = requests.get(url).json()['cards']
 
+    # função nova
+    def print_cartas(self):
+        for card in self.cards:
+            print(card['code'], end = " ")
+        print()
 
     # função modificada
     def realizar_acao(self, acao, valor=None):
@@ -54,7 +59,7 @@ class Player:
         
         elif acao == 'FOLD':
             self.estado = -1
-            self.fichas -= self.posta
+            self.fichas -= self.aposta
             sala.pot += self.aposta 
             self.aposta = 0
 
@@ -91,7 +96,19 @@ class PokerRoom:
             self.players.append(player)
             player.coletar_cartas(self.deck)
 
-    def verificar_ganhador(self):
+    def print_flop(self):
+        for card in self.flop:
+            print(card['code'], end = " ")
+        print()
+
+    def print_turn(self):
+        print(self.turn[0]['code'])
+
+    def print_river(self):
+        print(self.river[0]['code'])
+
+
+    def verificar_ganhadores(self):
         biblis = {
             'A': Rank.ACE, '2': Rank.TWO, '3': Rank.THREE, 
             '4': Rank.FOUR, '5': Rank.FIVE, '6': Rank.SIX,
@@ -109,8 +126,17 @@ class PokerRoom:
             for card in card_strings:
                 carta = [(biblis[card[0]],biblis[card[1]])]
                 cartas_jogador += carta
-            vetor_resposta.append((cartas_jogador.handenum, player.nome)) # arrumei aqui
-        return vetor_resposta
+            vetor_resposta.append((cartas_jogador, player.nome)) # arrumei aqui
+        vetor_resposta = sorted(vetor_resposta, reverse=True)
+        vencedores = []
+        vencedores.append(vetor_resposta[0])
+        i = 1
+        while vetor_resposta[0][0] == vetor_resposta[i][0]:
+            vencedores.append(vetor_resposta[i][0])
+            i += 1
+
+
+        return vencedores
 
     def verifica_unico_jogador(self):
         jogadores_ativos = [player for player in self.players if player.estado != -1]
@@ -119,12 +145,12 @@ class PokerRoom:
         return None
 
     # função nova 
-    def rodada_aposta(self,maior):
+    def rodada_aposta(self,maior,inicial =False):
         while any(player.estado == 0 for player in self.players):
             for player in self.players:
                 if player.estado == 0:
                     acao = "" 
-                    print(f"jogador {player.nome}")
+                    print(f"\n\njogador {player.nome} -- ", end="")
                     while acao not in ["CALL", "BET", "FOLD", "CHECK"]:
                         acao = input("ação: ").upper()
                         
@@ -135,9 +161,9 @@ class PokerRoom:
 
                             # teste (parece correto)
                             aux = maior
-                            if player.e_bb:
+                            if player.e_bb and inicial:
                                 aux = maior - self.big_blind
-                            if player.e_sb:
+                            if player.e_sb and inicial:
                                 aux = maior - self.small_blind
                             player.realizar_acao("CALL",aux)
                             # fim de teste
@@ -145,12 +171,11 @@ class PokerRoom:
                             for p in self.players:
                                 if p != player and p.estado != -1:
                                     p.estado = 0
-                            print(maior)
                         elif acao == "CALL":
                             aux = maior
-                            if player.e_bb:
+                            if player.e_bb and inicial:
                                 aux = maior - self.big_blind
-                            if player.e_sb:
+                            if player.e_sb and inicial:
                                 aux = maior - self.small_blind
                             player.realizar_acao("CALL",aux)
                         elif acao == "FOLD":
@@ -158,10 +183,10 @@ class PokerRoom:
                         elif acao == "CHECK":
                             player.realizar_acao("CHECK")
 
-
         for player in self.players:
             player.aposta_pot()
-            player.estado = 0
+            if player.estado != -1:
+                player.estado = 0
             print(f"{player.nome} ficou {player.fichas}")
 
     def iniciar_rodada(self):
@@ -173,26 +198,26 @@ class PokerRoom:
         for p in range(len(self.players)):
             self.players[p].estado = 0
             self.players[p].coletar_cartas(self.deck) 
-            print(self.players[p].cards)
+            self.players[p].print_cartas()
 
             # define que o ultimo é o BB
             if p == len(self.players) - 1:
                 self.players[p].fichas -= self.big_blind
                 self.players[p].e_bb = True 
                 self.pot += self.big_blind
-                print(f"BB:{self.players[p].nome}")
+                print(f"BB: {self.players[p].nome}\n\n")
 
             # define que o penultimo é o SB
             elif p == len(self.players) - 2:
                 self.players[p].fichas -= self.small_blind
                 self.players[p].e_sb = True
                 self.pot += self.small_blind
-                print(f"SB:{self.players[p].nome}")
+                print(f"SB: {self.players[p].nome}\n\n")
 
 
         # aqui pega no front ação de cada player
         # site que eu vi legal pra "roubar o css" == https://www.247freepoker.com/ (◠‿◠)
-        self.rodada_aposta(self.big_blind)
+        self.rodada_aposta(self.big_blind,True)
         
 
         vencedor = self.verifica_unico_jogador()
@@ -201,23 +226,48 @@ class PokerRoom:
             return vencedor
 
         self.flop = requests.get(f"https://deckofcardsapi.com/api/deck/{self.deck}/draw/?count=3").json()['cards']
-        print(f"Flop: {self.flop}\n\n")
+        print("FLOP: ")
+        self.print_flop()
+        print()
 
         self.rodada_aposta(0)
+
+        vencedor = self.verifica_unico_jogador()
+        if vencedor is not None:
+            print(f"O vencedor é {vencedor.nome}!")
+            return vencedor
 
         self.turn = requests.get(f"https://deckofcardsapi.com/api/deck/{self.deck}/draw/?count=1").json()['cards']
-        print(f"Turn: {self.turn}\n\n")
+        print("TURN: ")
+        self.print_turn()
+        print()
 
         self.rodada_aposta(0)
+
+        vencedor = self.verifica_unico_jogador()
+        if vencedor is not None:
+            print(f"O vencedor é {vencedor.nome}!")
+            return vencedor
 
         self.river = requests.get(f"https://deckofcardsapi.com/api/deck/{self.deck}/draw/?count=1").json()['cards']
-        print(f"River: {self.river}\n\n")
+        print("RIVER: ")
+        self.print_river()
+        print()
 
         self.rodada_aposta(0)
 
+        vencedor = self.verifica_unico_jogador()
+        if vencedor is not None:
+            print(f"O vencedor é {vencedor.nome}!")
+            return vencedor
+
         # Após o river, verificar o vencedor (tem que dar as fichas que estão em pot para o vencedor so que tem a parada do empate)
-        vencedor = sorted(self.verificar_ganhador(), reverse=True)
-        print(vencedor)
+        vencedores = self.verificar_ganhadores()
+        print(vencedores)
+
+        lib = {0 : "HIGHCARD", 1: "ONEPAIR", 2:"TWOPAIR",3: "THREEOFAKIND", 4 : "STRAIGHT", 5: "FLUSH", 6: "FULLHOUSE", 7: "FOUROFAKIND", 8: "STRAIGHTFLUSH"}
+        for winner in vencedores:
+            print(f"VENCEDOR FOI {winner[1]} tendo {lib[winner[0].handenum]}\n\n")
 
         BB = self.players.pop(0)
         self.players.append(BB)
