@@ -219,8 +219,8 @@ class PokerRoom:
         vencedor = sorted(self.verificar_ganhador(), reverse=True)
         print(vencedor)
 
-        BB = self.players.pop()
-        self.players.insert(0,BB)
+        BB = self.players.pop(0)
+        self.players.append(BB)
         self.iniciar_rodada()
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------
