@@ -16,10 +16,10 @@ class Player:
         self.fichas = chips
         self.cards = []
         self.indice_sala = -1
-        self.estado = -1
-        self.e_bb = False # atributos novos
-        self.e_sb = False # atributos novos
-        self.aposta = 0 # atributos novos
+        self.estado = -1 # 0 = "na rodada mas não jogou", 1 = "na rodada e ja jogou", -1 = "fora da rodada"
+        self.e_bb = False # atributo novo que diz se é bb
+        self.e_sb = False # atributo novo que diz se é bb
+        self.aposta = 0 # atributo novo
 
     def criar_sala(self, nome_sala, small_blind, big_blind):
         nova_sala = PokerRoom(nome_sala, 4,small_blind, big_blind)
@@ -107,6 +107,12 @@ class PokerRoom:
     def print_river(self):
         print(self.river[0]['code'])
 
+    def print_fichas(self):
+        print(f"pot: {self.pot}")
+        for player in self.players:
+            print(f"{player.nome} ficou {player.fichas}")
+        print("\n\n")
+
 
     def verificar_ganhadores(self):
         biblis = {
@@ -126,7 +132,7 @@ class PokerRoom:
             for card in card_strings:
                 carta = [(biblis[card[0]],biblis[card[1]])]
                 cartas_jogador += carta
-            vetor_resposta.append((cartas_jogador, player.nome)) # arrumei aqui
+            vetor_resposta.append((cartas_jogador, player))
         vetor_resposta = sorted(vetor_resposta, reverse=True)
         vencedores = []
         vencedores.append(vetor_resposta[0])
@@ -134,10 +140,9 @@ class PokerRoom:
         while vetor_resposta[0][0] == vetor_resposta[i][0]:
             vencedores.append(vetor_resposta[i][0])
             i += 1
-
-
         return vencedores
 
+    # função nova
     def verifica_unico_jogador(self):
         jogadores_ativos = [player for player in self.players if player.estado != -1]
         if len(jogadores_ativos) == 1:
@@ -187,19 +192,18 @@ class PokerRoom:
             player.aposta_pot()
             if player.estado != -1:
                 player.estado = 0
-            print(f"{player.nome} ficou {player.fichas}")
 
     def iniciar_rodada(self):
-        # Verifica se há 2 ou mais jogadores na sala não precisa no final
-        if len(self.players) < 2:
+        # Verifica se há 2 ou mais jogadores (TESTE)
+        if len(self.players) < 2 or any(player.fichas == 0 for player in self.players):
             return None
 
         # distribui as cartas para cada player e atribui o estado 0 que indica "a jogar"
         for p in range(len(self.players)):
             self.players[p].estado = 0
-            self.players[p].coletar_cartas(self.deck) 
-            self.players[p].print_cartas()
-
+            self.players[p].coletar_cartas(self.deck)
+            self.players[p].print_cartas() 
+            
             # define que o ultimo é o BB
             if p == len(self.players) - 1:
                 self.players[p].fichas -= self.big_blind
@@ -213,65 +217,90 @@ class PokerRoom:
                 self.players[p].e_sb = True
                 self.pot += self.small_blind
                 print(f"SB: {self.players[p].nome}\n\n")
+            
 
 
         # aqui pega no front ação de cada player
         # site que eu vi legal pra "roubar o css" == https://www.247freepoker.com/ (◠‿◠)
+
+        # PRE-FLOP
+        self.print_fichas()
         self.rodada_aposta(self.big_blind,True)
-        
+        self.print_fichas()
 
         vencedor = self.verifica_unico_jogador()
         if vencedor is not None:
             print(f"O vencedor é {vencedor.nome}!")
             return vencedor
 
+        # FLOP
         self.flop = requests.get(f"https://deckofcardsapi.com/api/deck/{self.deck}/draw/?count=3").json()['cards']
         print("FLOP: ")
         self.print_flop()
         print()
 
+
         self.rodada_aposta(0)
+        self.print_fichas()
 
         vencedor = self.verifica_unico_jogador()
         if vencedor is not None:
             print(f"O vencedor é {vencedor.nome}!")
             return vencedor
 
+        # TURN
         self.turn = requests.get(f"https://deckofcardsapi.com/api/deck/{self.deck}/draw/?count=1").json()['cards']
         print("TURN: ")
         self.print_turn()
         print()
 
         self.rodada_aposta(0)
+        self.print_fichas()
 
         vencedor = self.verifica_unico_jogador()
         if vencedor is not None:
             print(f"O vencedor é {vencedor.nome}!")
             return vencedor
 
+        # RIVER
         self.river = requests.get(f"https://deckofcardsapi.com/api/deck/{self.deck}/draw/?count=1").json()['cards']
         print("RIVER: ")
         self.print_river()
         print()
 
         self.rodada_aposta(0)
+        self.print_fichas()
 
         vencedor = self.verifica_unico_jogador()
         if vencedor is not None:
             print(f"O vencedor é {vencedor.nome}!")
             return vencedor
 
-        # Após o river, verificar o vencedor (tem que dar as fichas que estão em pot para o vencedor so que tem a parada do empate)
+        # Após o river, verificar o vencedor (tem que ver a parada do empate)
         vencedores = self.verificar_ganhadores()
-        print(vencedores)
 
+        # imprime o que o(s) vencedor(es) tem
         lib = {0 : "HIGHCARD", 1: "ONEPAIR", 2:"TWOPAIR",3: "THREEOFAKIND", 4 : "STRAIGHT", 5: "FLUSH", 6: "FULLHOUSE", 7: "FOUROFAKIND", 8: "STRAIGHTFLUSH"}
         for winner in vencedores:
-            print(f"VENCEDOR FOI {winner[1]} tendo {lib[winner[0].handenum]}\n\n")
+            print(f"VENCEDOR FOI {winner[1].nome} tendo {lib[winner[0].handenum]}\n\n")
 
+        # da pra o vitorioso o pot, considerando que não temos empate
+        vencedores[0][1].fichas += self.pot
+        self.pot = 0
+        self.print_fichas()
+
+        # troca o BB e SB
         BB = self.players.pop(0)
         self.players.append(BB)
+
+        # retorna as cartas para o deck
+        requests.get(f"https://deckofcardsapi.com/api/deck/{self.deck}/return/")
+        requests.get(f"https://deckofcardsapi.com/api/deck/{self.deck}/shuffle/") 
+
+        # coloquei so pra ficar em looping
         self.iniciar_rodada()
+        
+        return vencedores
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------
 def listar_partidas():
@@ -299,8 +328,8 @@ def iniciar_partida(indice_sala):
         print(f"Erro: Não existe uma partida no índice {indice_sala}.")
         return False
 
-jogador = Player('victor', 1000)
-jogador2 = Player('joao',2000)
+jogador = Player('victor', 5000)
+jogador2 = Player('joao',5000)
 sala_jogador = jogador.criar_sala('sala1',5,10)
 jogador2.entrar_sala("sala1")
 sala_jogador.iniciar_rodada()
