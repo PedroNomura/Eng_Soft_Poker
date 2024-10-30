@@ -101,7 +101,7 @@ class Player:
 
     # função modificada
     def realizar_acao(self, acao, valor=None):
-        sala = salas[self.indice_sala]
+        sala = salas[0] # antes era self.indice_sala
         if acao == 'BET':
             self.estado = 1
             self.aposta += valor
