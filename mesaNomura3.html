@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mesa</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div id="mesa-jogo">
+        <button class="voltar" onclick="window.location.href='{{ url_for('home') }}'">Voltar</button>
+        <h1>Mesa: {{ sala.nome }}</h1>
+        <div class="mesa-visual">
+            <div class="cadeira" onclick="sentar(1)" id="cadeira1">Cartas do Bot</div>
+            <div class="cadeira" onclick="sentar(2)" id="cadeira2">2</div>
+            <div class="cadeira" onclick="sentar(3)" id="cadeira3">3</div>
+            
+        </div>
+
+        <div class="cartas-comunitarias">
+            <h2>Cartas Comunitárias</h2>
+            <div class="comunitarias">
+                <img id="cartaFlop1" src="" alt="Flop 1" class="carta" style="display: none;">
+                <img id="cartaFlop2" src="" alt="Flop 2" class="carta" style="display: none;">
+                <img id="cartaFlop3" src="" alt="Flop 3" class="carta" style="display: none;">
+                <img id="cartaTurn" src="" alt="Turn" class="carta" style="display: none;">
+                <img id="cartaRiver" src="" alt="River" class="carta" style="display: none;">
+            </div>
+        </div>
+
+        <div class="cartas-container">
+            <h2>Suas Cartas</h2>
+            {% for carta in jogador.cards %}
+                <img src="{{ carta.image }}" alt="{{ carta.value }} of {{ carta.suit }}" class="carta">
+            {% endfor %}
+        </div>
+
+        <button id="revealButton" onclick="revealCard()">Revelar Carta</button>
+        <button id="foldButton" onclick="fold()">Fold</button>
+
+        <form method="POST">
+            <button type="submit" name="escolha" value="check">CHECK</button>
+            <button type="submit" name="escolha" value="bet">BET</button>
+            <button type="submit" name="escolha" value="call">CALL</button>
+            <button type="submit" name="escolha" value="fold">FOLD</button>
+        </form>
+
+    </div>
+
+    <script>
+        let cartaAtual = 0; // Para controlar qual carta será revelada
+        const cartasFlop = [
+            "{{ sala.flop[0].image }}", // Imagens do flop
+            "{{ sala.flop[1].image }}",
+            "{{ sala.flop[2].image }}"
+        ];
+        const cartasTurn = "{{ sala.turn[0].image }}"; // Imagem do turn
+        const cartasRiver = "{{ sala.river[0].image }}"; // Imagem do river
+
+        function sentar(posicao) {
+            const icone = 'lugar ocupado';  // Ícone que representa um jogador sentado
+            document.getElementById(`cadeira${posicao}`).innerHTML = icone;
+        }
+
+        function revealCard() {
+            if (cartaAtual === 0) {
+                // Revelar todas as cartas do flop
+                document.getElementById("cartaFlop1").src = cartasFlop[0];
+                document.getElementById("cartaFlop2").src = cartasFlop[1];
+                document.getElementById("cartaFlop3").src = cartasFlop[2];
+                document.getElementById("cartaFlop1").style.display = 'block'; // Mostra a carta 1
+                document.getElementById("cartaFlop2").style.display = 'block'; // Mostra a carta 2
+                document.getElementById("cartaFlop3").style.display = 'block'; // Mostra a carta 3
+                cartaAtual++;
+            } else if (cartaAtual === 1) {
+                // Revelar Turn
+                document.getElementById("cartaTurn").src = cartasTurn;
+                document.getElementById("cartaTurn").style.display = 'block';
+                cartaAtual++;
+            } else if (cartaAtual === 2) {
+                // Revelar River
+                document.getElementById("cartaRiver").src = cartasRiver;
+                document.getElementById("cartaRiver").style.display = 'block';
+                cartaAtual++;
+            }
+        }
+
+        function fold() {
+            alert('Rodada encerrada!'); // Lógica para encerrar a rodada
+            // Aqui você pode adicionar a lógica que desejar para finalizar a rodada
+        }
+    </script>
+</body>
+</html>
