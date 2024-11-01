@@ -4,66 +4,39 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mesas Online</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
     <div id="mesas-online">
         <h1>Mesas Online</h1>
         <div id="mesas-container">
-            <div class="mesa-item" onclick="abrirMesa(1)">
-                <span>Mesa 1</span>
-                <span>3 players</span>
-                <span>Buy in 40</span>
+            {% for sala in salas %}
+            <div class="mesa-item">
+                <a id="mesa" href="{{ url_for('entrarMesa') }}">Entrar</a>
+                <span>{{ sala.nome }}</span>
+                <span>{{ sala.seats }} assentos</span>
+                <span>Blinds: {{ sala.small_blind }} / {{ sala.big_blind }}</span>
             </div>
-            <div class="mesa-item" onclick="abrirMesa(2)">
-                <span>Mesa 2</span>
-                <span>4 players</span>
-                <span>Buy in 50</span>
-            </div>
-            <div class="mesa-item" onclick="abrirMesa(3)">
-                <span>Mesa 3</span>
-                <span>2 players</span>
-                <span>Buy in 30</span>
-            </div>
-            <div class="mesa-item" onclick="abrirMesa(4)">
-                <span>Mesa 4</span>
-                <span>6 players</span>
-                <span>Buy in 60</span>
-            </div>
-            <div class="mesa-item" onclick="abrirMesa(5)">
-                <span>Mesa 5</span>
-                <span>5 players</span>
-                <span>Buy in 70</span>
-            </div>
-            <div class="mesa-item" onclick="abrirMesa(6)">
-                <span>Mesa 6</span>
-                <span>2 players</span>
-                <span>Buy in 100</span>
-            </div>
-            <div class="mesa-item" onclick="abrirMesa(7)">
-                <span>Mesa 7</span>
-                <span>2 players</span>
-                <span>Buy in 20</span>
-            </div>
-            <div class="mesa-item" onclick="abrirMesa(8)">
-                <span>Mesa 8</span>
-                <span>3 players</span>
-                <span>Buy in 50</span>
-            </div>
-
+            {% endfor %}
         </div>
-        <button class="criar-mesa">selecione uma mesa</button>
     </div>
-
-    <script>
-        function abrirMesa(mesaId) {
-            window.location.href = `mesa.html?mesaId=${mesaId}`;
-        }
-    </script>
+    <div>
+        <h2>Criar Nova Sala</h2>
+        <form method="post">
+            <label for="nome">Nome da sala:</label>
+            <input type="text" id="nome" name="nome" required>
+            <br><br>
+            <label for="tamanho">Tamanho da sala:</label>
+            <input type="number" id="tamanho" name="tamanho" required>
+            <br><br>
+            <label for="small">Valor do small blind:</label>
+            <input type="number" id="small" name="small" required>
+            <br><br>
+            <label for="big">Valor do big blind:</label>
+            <input type="number" id="big" name="big" required>
+            <br><br>
+            <button type="submit">Criar sala</button>
+        </form>
+    </div>
 </body>
 </html>
-
-
-
-
-
