@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mesa</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div id="mesa-jogo">
+        <button class="voltar" onclick="window.location.href='{{ url_for('home') }}'">Voltar</button>
+        <h1>Mesa: {{ sala.nome }}</h1>
+        <div class="mesa-visual">
+            <div class="cadeira" onclick="sentar(1)" id="cadeira1">Cartas do Bot</div>
+            <div class="cadeira" onclick="sentar(2)" id="cadeira2">2</div>
+            <div class="cadeira" onclick="sentar(3)" id="cadeira3">3</div>
+        </div>
+
+        <div class="cartas-comunitarias">
+            <h2>Cartas Comunitárias</h2>
+            <div class="comunitarias">
+                <!-- ainda tem q mudar a logica da funcao do joao para aparecer as cartas certo -->
+                {% if sala.rodada >= 2 %}
+                <img src="{{ sala.flop[0].image }}" alt="{{ sala.flop[0].value }} of {{ sala.flop[0].suit }}" class="carta">
+                <img src="{{ sala.flop[1].image }}" alt="{{ sala.flop[1].value }} of {{ sala.flop[1].suit }}" class="carta">
+                <img src="{{ sala.flop[2].image }}" alt="{{ sala.flop[2].value }} of {{ sala.flop[2].suit }}" class="carta">
+                {% endif %}
+                {% if sala.rodada >= 3 %}
+                <img src="{{ sala.turn[0].image }}" alt="{{ sala.turn[0].value }} of {{ sala.turn[0].suit }}" class="carta">
+                {% endif %}
+                {% if sala.rodada >= 4 %}
+                <img src="{{ sala.river[0].image }}" alt="{{ sala.river[0].value }} of {{ sala.river[0].suit }}" class="carta">
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="cartas-container">
+            <h2>Suas Cartas</h2>
+            {% for carta in jogador.cards %}
+                <img src="{{ carta.image }}" alt="{{ carta.value }} of {{ carta.suit }}" class="carta">
+            {% endfor %}
+        </div>
+
+        <form method="POST">
+            <button type="submit" name="escolha" value="CHECK">CHECK</button>
+            <button type="submit" name="escolha" value="BET">BET</button>
+            <button type="submit" name="escolha" value="CALL">CALL</button>
+            <button type="submit" name="escolha" value="FOLD">FOLD</button>
+        </form>
+
+    </div>
+
+    <script>
+
+        function sentar(posicao) {
+            const icone = 'lugar ocupado';  // Ícone que representa um jogador sentado
+            document.getElementById(`cadeira${posicao}`).innerHTML = icone;
+        }
+
+    </script>
+</body>
+</html>
