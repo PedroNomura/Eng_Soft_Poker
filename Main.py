@@ -28,47 +28,48 @@ def home():
 
 @app.route('/mesa', methods = ['GET', 'POST'])
 def entrarMesa(): # logica do poker vai ter q entrar aqui, chamando varias outras funçoes
-    if salas[0].rodada == 0:
+    #print(jogador.estado)
+    #print(salas[0].players)
+
+    if jogador.estado == -1 and salas[0].rodada > 0: # quando o jogador da fold (rodada termina)
+        salas[0].final()
+        print(salas[0].rodada)
+        salas[0].rodada=0
+
+    if salas[0].rodada == 0: # iniciar rodada
         salas[0].iniciar_rodada() 
         print(salas[0].rodada)
         salas[0].rodada+=1
 
-    elif salas[0].rodada == 1:
+    elif salas[0].rodada == 1: # pre-flop
         if request.method == "POST":
             escolha = request.form['escolha']
             salas[0].rodada_aposta(0,escolha,jogador) # botei 0 pq ta foda
-        #salas[0].preFlop()
         print(salas[0].rodada)
         salas[0].rodada+=1
 
-    elif salas[0].rodada == 2:
+    elif salas[0].rodada == 2: # flop
         if request.method == "POST":
             escolha = request.form['escolha']
             salas[0].rodada_aposta(0,escolha,jogador) # botei 0 pq ta foda
-        #salas[0].Flop()
-        #salas[0].flop = requests.get(f"https://deckofcardsapi.com/api/deck/{salas[0].deck}/draw/?count=3").json()['cards']
         print(salas[0].rodada)
         salas[0].rodada+=1
 
-    elif salas[0].rodada == 3:
+    elif salas[0].rodada == 3: # turn
         if request.method == "POST":
             escolha = request.form['escolha']
             salas[0].rodada_aposta(0,escolha,jogador) # botei 0 pq ta foda
-        #salas[0].Turn()
-        #salas[0].turn = requests.get(f"https://deckofcardsapi.com/api/deck/{salas[0].deck}/draw/?count=1").json()['cards']
         print(salas[0].rodada)
         salas[0].rodada+=1
 
-    elif salas[0].rodada == 4:
+    elif salas[0].rodada == 4: # river
         if request.method == "POST":
             escolha = request.form['escolha']
             salas[0].rodada_aposta(0,escolha,jogador) # botei 0 pq ta foda
-        #salas[0].River()
-        #salas[0].river = requests.get(f"https://deckofcardsapi.com/api/deck/{salas[0].deck}/draw/?count=1").json()['cards']
         print(salas[0].rodada)
         salas[0].rodada+=1
 
-    elif salas[0].rodada == 5:
+    elif salas[0].rodada == 5: # fim de jogo (resultado)
         salas[0].final()
         print(salas[0].rodada)
         salas[0].rodada=0
@@ -77,9 +78,6 @@ def entrarMesa(): # logica do poker vai ter q entrar aqui, chamando varias outra
         print("deu merda")
         # salas[0].rodada = 0 
 
-    # if request.method == "POST":
-    #     escolha = request.form['escolha']
-    #     salas[0].rodada_aposta(0,escolha,jogador) # botei 0 pq ta foda
 
     return render_template('mesa.html', sala=salas[0], jogador=jogador)
 
@@ -96,14 +94,15 @@ class Player:
         self.nome = nome
         self.fichas = chips
         self.cards = []
-        self.indice_sala = -1
+        self.indice_sala = -1 # acho que da merda quando ele cria mais de uma sala
         self.estado = -1 # 0 = "na rodada mas não jogou", 1 = "na rodada e ja jogou", -1 = "fora da rodada"
         self.e_bb = False # atributo novo que diz se é bb
         self.e_sb = False # atributo novo que diz se é sb
         self.aposta = 0 # atributo novo
 
     def criar_sala(self, nome_sala, small_blind, big_blind):
-        nova_sala = PokerRoom(nome_sala, 4,small_blind, big_blind)
+        # quando criar colocar um outro jogador q vai ser o bot, fazer acoes basicas dele
+        nova_sala = PokerRoom(nome_sala, 4, small_blind, big_blind)
         salas.append(nova_sala)
         self.indice_sala = len(salas) - 1 
         nova_sala.players.append(self) 
@@ -127,9 +126,17 @@ class Player:
             print(card['code'], end = " ")
         print()
 
+    # função nova
+    def aposta_pot(self): # não esta sendo usada, precisa usar
+        # sala = salas[self.indice_sala] ANTIGO 
+        sala = salas[0]
+        self.fichas -= self.aposta
+        sala.pot += self.aposta
+        self.aposta = 0
+
     # função modificada
-    def realizar_acao(self, acao, valor=None):
-        sala = salas[0] # antes era self.indice_sala
+    def realizar_acao(self, acao, valor=None): # pot da sala não esta sendo atualizado
+        sala = salas[0] # antes era sala = self.indice_sala
         if acao == 'BET':
             self.estado = 1
             self.aposta += valor
@@ -147,15 +154,17 @@ class Player:
         elif acao == 'CHECK':
             self.estado = 1
             self.aposta = 0
-        
-        return True
 
-    # função nova
-    def aposta_pot(self):
-        sala = salas[self.indice_sala]
+        # teste (funcao aposta_pot n aceitou)
+        # sala = salas[self.indice_sala] ANTIGO 
+        sala = salas[0]
         self.fichas -= self.aposta
         sala.pot += self.aposta
         self.aposta = 0
+        
+        return True
+
+    
 # ---------------------------------------------------------------------------------------------------------------------------------------------
 class PokerRoom:
     def __init__(self, nome, seats, small_blind, big_blind):
@@ -236,17 +245,17 @@ class PokerRoom:
     def rodada_aposta(self,maior,acao,player,inicial=False): # funciona so p um jogador
         if acao == "BET":
             #valor = int(input("valor: "))
-            valor = self.big_blind
+            valor = self.big_blind # valor padrao de aposta
             player.realizar_acao("BET",valor)
             maior += valor
 
             # teste (parece correto)
-            aux = maior
-            if player.e_bb and inicial:
-                aux = maior - self.big_blind
-            if player.e_sb and inicial:
-                aux = maior - self.small_blind
-            player.realizar_acao("CALL",aux)
+            # aux = maior
+            # if player.e_bb and inicial:
+            #     aux = maior - self.big_blind
+            # if player.e_sb and inicial:
+            #     aux = maior - self.small_blind
+            # player.realizar_acao("CALL",aux)
             # fim de teste
 
         elif acao == "CALL":
@@ -290,59 +299,60 @@ class PokerRoom:
     
         # site que eu vi legal pra "roubar o css" == https://www.247freepoker.com/ (◠‿◠)
 
-    def preFlop(self):
-        # PRE-FLOP
-        self.print_fichas()
-        #self.rodada_aposta(self.big_blind,True)
-        self.print_fichas()
+    # def preFlop(self):
+    #     # PRE-FLOP
+    #     self.print_fichas()
+    #     #self.rodada_aposta(self.big_blind,True)
+    #     self.print_fichas()
 
-        vencedor = self.verifica_unico_jogador()
-        if vencedor is not None:
-            print(f"O vencedor é {vencedor.nome}!")
-            return vencedor
+    #     vencedor = self.verifica_unico_jogador()
+    #     if vencedor is not None:
+    #         print(f"O vencedor é {vencedor.nome}!")
+    #         return vencedor
         
-    def Flop(self):
-        # FLOP
-        self.flop = requests.get(f"https://deckofcardsapi.com/api/deck/{self.deck}/draw/?count=3").json()['cards']
-        print("FLOP: ")
-        self.print_flop()
-        print()
+    # def Flop(self):
+    #     # FLOP
+    #     self.flop = requests.get(f"https://deckofcardsapi.com/api/deck/{self.deck}/draw/?count=3").json()['cards']
+    #     print("FLOP: ")
+    #     self.print_flop()
+    #     print()
 
-        #self.rodada_aposta(0)
-        self.print_fichas()
+    #     #self.rodada_aposta(0)
+    #     self.print_fichas()
 
-        vencedor = self.verifica_unico_jogador()
-        if vencedor is not None:
-            print(f"O vencedor é {vencedor.nome}!")
-            return vencedor
-    def Turn(self):
-        # TURN
-        self.turn = requests.get(f"https://deckofcardsapi.com/api/deck/{self.deck}/draw/?count=1").json()['cards']
-        print("TURN: ")
-        self.print_turn()
-        print()
+    #     vencedor = self.verifica_unico_jogador()
+    #     if vencedor is not None:
+    #         print(f"O vencedor é {vencedor.nome}!")
+    #         return vencedor
+    # def Turn(self):
+    #     # TURN
+    #     self.turn = requests.get(f"https://deckofcardsapi.com/api/deck/{self.deck}/draw/?count=1").json()['cards']
+    #     print("TURN: ")
+    #     self.print_turn()
+    #     print()
 
-        #self.rodada_aposta(0)
-        self.print_fichas()
+    #     #self.rodada_aposta(0)
+    #     self.print_fichas()
 
-        vencedor = self.verifica_unico_jogador()
-        if vencedor is not None:
-            print(f"O vencedor é {vencedor.nome}!")
-            return vencedor
-    def River(self):
-        # RIVER
-        self.river = requests.get(f"https://deckofcardsapi.com/api/deck/{self.deck}/draw/?count=1").json()['cards']
-        print("RIVER: ")
-        self.print_river()
-        print()
+    #     vencedor = self.verifica_unico_jogador()
+    #     if vencedor is not None:
+    #         print(f"O vencedor é {vencedor.nome}!")
+    #         return vencedor
+    # def River(self):
+    #     # RIVER
+    #     self.river = requests.get(f"https://deckofcardsapi.com/api/deck/{self.deck}/draw/?count=1").json()['cards']
+    #     print("RIVER: ")
+    #     self.print_river()
+    #     print()
 
-        #self.rodada_aposta(0)
-        self.print_fichas()
+    #     #self.rodada_aposta(0)
+    #     self.print_fichas()
 
-        vencedor = self.verifica_unico_jogador()
-        if vencedor is not None:
-            print(f"O vencedor é {vencedor.nome}!")
-            return vencedor
+    #     vencedor = self.verifica_unico_jogador()
+    #     if vencedor is not None:
+    #         print(f"O vencedor é {vencedor.nome}!")
+    #         return vencedor
+
     def final(self):
         # Após o river, verificar o vencedor (tem que ver a parada do empate)
         vencedores = self.verificar_ganhadores()
