@@ -22,16 +22,14 @@ def home():
         tamanho = request.form.get("tamanho")
         small = request.form.get("small")
         big = request.form.get("big")
-        jogador.criar_sala(nome, small, big)
+        jogador.criar_sala(nome, small, big, bot)
 
-    return render_template('mesas.html', salas=salas, jogador=jogador)
+    return render_template('mesas.html', salas=salas, jogador=jogador, bot=bot)
 
 @app.route('/mesa', methods = ['GET', 'POST'])
-def entrarMesa(): # logica do poker vai ter q entrar aqui, chamando varias outras funçoes
-    #print(jogador.estado)
-    #print(salas[0].players)
+def entrarMesa(): 
 
-    if jogador.estado == -1 and salas[0].rodada > 0: # quando o jogador da fold (rodada termina)
+    if salas[0].acabou: # quando o jogador da fold - REVER
         salas[0].final()
         print(salas[0].rodada)
         salas[0].rodada=0
@@ -79,7 +77,7 @@ def entrarMesa(): # logica do poker vai ter q entrar aqui, chamando varias outra
         # salas[0].rodada = 0 
 
 
-    return render_template('mesa.html', sala=salas[0], jogador=jogador)
+    return render_template('mesa.html', sala=salas[0], jogador=jogador, bot=bot)
 
 @app.route('/mesas')
 def mesas():
@@ -94,15 +92,16 @@ class Player:
         self.nome = nome
         self.fichas = chips
         self.cards = []
-        self.indice_sala = -1 # acho que da merda quando ele cria mais de uma sala
+        self.indice_sala = -1 # acho que vai dar merda quando ele criar mais de uma sala
         self.estado = -1 # 0 = "na rodada mas não jogou", 1 = "na rodada e ja jogou", -1 = "fora da rodada"
         self.e_bb = False # atributo novo que diz se é bb
         self.e_sb = False # atributo novo que diz se é sb
         self.aposta = 0 # atributo novo
 
-    def criar_sala(self, nome_sala, small_blind, big_blind):
-        # quando criar colocar um outro jogador q vai ser o bot, fazer acoes basicas dele
+    def criar_sala(self, nome_sala, small_blind, big_blind, bot):
+        # quando criar a sala colocar um outro jogador q vai ser o bot, fazer acoes basicas dele
         nova_sala = PokerRoom(nome_sala, 4, small_blind, big_blind)
+        nova_sala.adicionar_jogador(bot)
         salas.append(nova_sala)
         self.indice_sala = len(salas) - 1 
         nova_sala.players.append(self) 
@@ -135,7 +134,7 @@ class Player:
         self.aposta = 0
 
     # função modificada
-    def realizar_acao(self, acao, valor=None): # pot da sala não esta sendo atualizado
+    def realizar_acao(self, acao, valor=None): 
         sala = salas[0] # antes era sala = self.indice_sala
         if acao == 'BET':
             self.estado = 1
@@ -156,8 +155,6 @@ class Player:
             self.aposta = 0
 
         # teste (funcao aposta_pot n aceitou)
-        # sala = salas[self.indice_sala] ANTIGO 
-        sala = salas[0]
         self.fichas -= self.aposta
         sala.pot += self.aposta
         self.aposta = 0
@@ -175,6 +172,7 @@ class PokerRoom:
         self.players = []
 
         self.rodada = 0
+        self.acabou = False
 
 
         self.deck = requests.get("https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1").json()['deck_id']
@@ -242,12 +240,14 @@ class PokerRoom:
         return None
 
     # função nova 
-    def rodada_aposta(self,maior,acao,player,inicial=False): # funciona so p um jogador
+    def rodada_aposta(self,maior,acao,player,inicial=False): # voltar com algumas coisas do victao antigas
         if acao == "BET":
             #valor = int(input("valor: "))
             valor = self.big_blind # valor padrao de aposta
             player.realizar_acao("BET",valor)
-            maior += valor
+            bot.realizar_acao("CALL", valor)
+            
+            #maior += valor
 
             # teste (parece correto)
             # aux = maior
@@ -267,8 +267,10 @@ class PokerRoom:
             player.realizar_acao("CALL",aux)
         elif acao == "FOLD":
             player.realizar_acao("FOLD")
+            self.acabou = True
         elif acao == "CHECK":
             player.realizar_acao("CHECK")
+            bot.realizar_acao("CHECK")
 
         if player.estado != -1:
             player.estado = 0
@@ -410,8 +412,9 @@ def iniciar_partida(indice_sala):
 
 
 jogador = Player('victor', 1000)
-jogador.criar_sala('sala1', 5, 10)
-jogador.criar_sala('sala2', 10, 20)
+bot = Player("bot", 1000)
+jogador.criar_sala('sala1', 5, 10, bot)
+jogador.criar_sala('sala2', 10, 20, bot)
 
 
 
