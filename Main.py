@@ -28,7 +28,7 @@ def home():
 
 @app.route('/mesa', methods = ['GET', 'POST'])
 def entrarMesa(): 
-
+    # a numeração das rodadas ta dando merda - IMPORTANTE
     if salas[0].acabou: # quando o jogador da fold - REVER
         salas[0].final()
         print(salas[0].rodada)
@@ -70,6 +70,7 @@ def entrarMesa():
     elif salas[0].rodada == 5: # fim de jogo (resultado)
         salas[0].final()
         print(salas[0].rodada)
+        print(salas[0].vencedores)
         salas[0].rodada=0
 
     else:
@@ -97,6 +98,7 @@ class Player:
         self.e_bb = False # atributo novo que diz se é bb
         self.e_sb = False # atributo novo que diz se é sb
         self.aposta = 0 # atributo novo
+
 
     def criar_sala(self, nome_sala, small_blind, big_blind, bot):
         # quando criar a sala colocar um outro jogador q vai ser o bot, fazer acoes basicas dele
@@ -173,6 +175,8 @@ class PokerRoom:
 
         self.rodada = 0
         self.acabou = False
+        self.vencedores = []
+        self.lib = {0 : "HIGHCARD", 1: "ONEPAIR", 2:"TWOPAIR",3: "THREEOFAKIND", 4 : "STRAIGHT", 5: "FLUSH", 6: "FULLHOUSE", 7: "FOUROFAKIND", 8: "STRAIGHTFLUSH"}
 
 
         self.deck = requests.get("https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1").json()['deck_id']
@@ -312,60 +316,19 @@ class PokerRoom:
     #         print(f"O vencedor é {vencedor.nome}!")
     #         return vencedor
         
-    # def Flop(self):
-    #     # FLOP
-    #     self.flop = requests.get(f"https://deckofcardsapi.com/api/deck/{self.deck}/draw/?count=3").json()['cards']
-    #     print("FLOP: ")
-    #     self.print_flop()
-    #     print()
-
-    #     #self.rodada_aposta(0)
-    #     self.print_fichas()
-
-    #     vencedor = self.verifica_unico_jogador()
-    #     if vencedor is not None:
-    #         print(f"O vencedor é {vencedor.nome}!")
-    #         return vencedor
-    # def Turn(self):
-    #     # TURN
-    #     self.turn = requests.get(f"https://deckofcardsapi.com/api/deck/{self.deck}/draw/?count=1").json()['cards']
-    #     print("TURN: ")
-    #     self.print_turn()
-    #     print()
-
-    #     #self.rodada_aposta(0)
-    #     self.print_fichas()
-
-    #     vencedor = self.verifica_unico_jogador()
-    #     if vencedor is not None:
-    #         print(f"O vencedor é {vencedor.nome}!")
-    #         return vencedor
-    # def River(self):
-    #     # RIVER
-    #     self.river = requests.get(f"https://deckofcardsapi.com/api/deck/{self.deck}/draw/?count=1").json()['cards']
-    #     print("RIVER: ")
-    #     self.print_river()
-    #     print()
-
-    #     #self.rodada_aposta(0)
-    #     self.print_fichas()
-
-    #     vencedor = self.verifica_unico_jogador()
-    #     if vencedor is not None:
-    #         print(f"O vencedor é {vencedor.nome}!")
-    #         return vencedor
+    
 
     def final(self):
         # Após o river, verificar o vencedor (tem que ver a parada do empate)
-        vencedores = self.verificar_ganhadores()
+        self.vencedores = self.verificar_ganhadores()
 
         # imprime o que o(s) vencedor(es) tem
-        lib = {0 : "HIGHCARD", 1: "ONEPAIR", 2:"TWOPAIR",3: "THREEOFAKIND", 4 : "STRAIGHT", 5: "FLUSH", 6: "FULLHOUSE", 7: "FOUROFAKIND", 8: "STRAIGHTFLUSH"}
-        for winner in vencedores:
-            print(f"VENCEDOR FOI {winner[1].nome} tendo {lib[winner[0].handenum]}\n\n")
+        
+        for winner in self.vencedores:
+            print(f"VENCEDOR FOI {winner[1].nome} tendo {self.lib[winner[0].handenum]}\n\n")
 
         # da pra o vitorioso o pot, considerando que não temos empate
-        vencedores[0][1].fichas += self.pot
+        self.vencedores[0][1].fichas += self.pot
         self.pot = 0
         self.print_fichas()
 
