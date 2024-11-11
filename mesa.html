@@ -14,8 +14,9 @@
             <div class="cadeira" id="cadeira1">Cartas do Bot</div> <!-- Não faz sentido isso ser uma cadeira -->
         </div>
         
+        <h2>Fichas do oponente: {{bot.fichas}}</h2>
         <!-- frontend ta dando merda aqui nas cartas do bot -->
-        <!-- <h2>Cartas do bot</h2> 
+        <!-- <h2>Cartas do oponente</h2> 
         {% for carta in bot.cards %}
             <img src="{{ carta.image }}" alt="{{ carta.value }} of {{ carta.suit }}" class="carta">
         {% endfor %} -->
@@ -45,9 +46,17 @@
             </div>
             {% if sala.rodada == 5 %}
                 <!-- Mostrar resultado da partida -->
+                <!-- lista vencedores ta indo vazia(atrasada), o que ta aparecendo é da rodada passada 
+                 tudo isso por causa da numeração das rodadas la no Main -->
+                {% if sala.vencedores %}
+                <h2>VENCEDOR FOI {{sala.vencedores[0][1].nome}} TENDO {{sala.lib[sala.vencedores[0][0].handenum]}}</h2>
+                {% else %}
+                <h2>teste else</h2>
+                {% endif %}
             {% endif %}
         </div>
 
+        <h2>Suas fichas: {{jogador.fichas}}</h2>
         <div class="cartas-container">
             <h2>Suas Cartas</h2>
             {% for carta in jogador.cards %}
