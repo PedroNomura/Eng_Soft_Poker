@@ -17,6 +17,7 @@ valores = {
 
 @app.route('/', methods = ['GET', 'POST'])
 def home():
+    salas[0].rodada = 0
     if request.method == 'POST':
         nome = request.form.get("nome")
         tamanho = request.form.get("tamanho")
@@ -29,10 +30,10 @@ def home():
 @app.route('/mesa', methods = ['GET', 'POST'])
 def entrarMesa(): 
     # a numeração das rodadas ta dando merda - IMPORTANTE
-    if salas[0].acabou: # quando o jogador da fold - REVER
-        salas[0].final()
-        print(salas[0].rodada)
-        salas[0].rodada=0
+    # if salas[0].acabou: # quando o jogador da fold - REVER
+    #     #salas[0].final()
+    #     print(salas[0].rodada)
+    #     salas[0].rodada=0
 
     if salas[0].rodada == 0: # iniciar rodada
         salas[0].iniciar_rodada() 
@@ -66,11 +67,15 @@ def entrarMesa():
             salas[0].rodada_aposta(0,escolha,jogador) # botei 0 pq ta foda
         print(salas[0].rodada)
         salas[0].rodada+=1
-
-    elif salas[0].rodada == 5: # fim de jogo (resultado)
         salas[0].final()
         print(salas[0].rodada)
         print(salas[0].vencedores)
+        #salas[0].rodada=0
+
+    elif salas[0].rodada == 5: # fim de jogo (resultado)
+        # salas[0].final()
+        # print(salas[0].rodada)
+        # print(salas[0].vencedores)
         salas[0].rodada=0
 
     else:
@@ -82,6 +87,7 @@ def entrarMesa():
 
 @app.route('/mesas')
 def mesas():
+    salas[0].rodada = 0
     return render_template('mesas.html', salas=salas, jogador=jogador)
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------
@@ -341,7 +347,7 @@ class PokerRoom:
         requests.get(f"https://deckofcardsapi.com/api/deck/{self.deck}/shuffle/") 
 
         # coloquei so pra ficar em looping
-        self.iniciar_rodada()
+        #self.iniciar_rodada()
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------
 
