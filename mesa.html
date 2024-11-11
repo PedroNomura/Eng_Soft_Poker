@@ -58,18 +58,29 @@
 
         <h2>Suas fichas: {{jogador.fichas}}</h2>
         <div class="cartas-container">
+            {% if sala.rodada != 0 %}
             <h2>Suas Cartas</h2>
             {% for carta in jogador.cards %}
                 <img src="{{ carta.image }}" alt="{{ carta.value }} of {{ carta.suit }}" class="carta">
             {% endfor %}
+            {% endif %}
         </div>
-
+        {% if sala.rodada == 5 %}
+        <form method="POST">
+            <button type="submit" name="escolha" value="FODASSE">CONTINUAR</button>
+        </form>
+        {% elif sala.rodada == 0 %}
+        <form method="POST">
+            <button type="submit" name="escolha" value="FODASSE">JOGAR DE NOVO</button>
+        </form>
+        {% else %}
         <form method="POST">
             <button type="submit" name="escolha" value="CHECK">CHECK</button>
             <button type="submit" name="escolha" value="BET">BET</button>
             <button type="submit" name="escolha" value="CALL">CALL</button>
             <button type="submit" name="escolha" value="FOLD">FOLD</button>
         </form>
+        {% endif %}
 
     </div>
 </body>
