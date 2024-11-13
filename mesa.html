@@ -31,6 +31,7 @@
     <!-- Música de fundo com controle de tempo inicial -->
     <audio id="background-audio" src="{{ url_for('static', filename='musica.mp3') }}" loop autoplay></audio>
 
+    <!-- Tudo referente a rodada 0 não precisa mais -->
     <div id="mesa-jogo">
         <button class="voltar" onclick="window.location.href='{{ url_for('home') }}'">Voltar</button>
         <h1>Mesa: {{ sala.nome }}</h1>
@@ -42,6 +43,7 @@
                         {% if sala.rodada == 5 %}
                             <img src="{{ carta.image }}" alt="{{ carta.value }} de {{ carta.suit }}" class="carta">
                         {% else %}
+                            <!-- Mostrar carta fechada -->
                             <img src="/static/closed_card.png" alt="Carta Fechada" class="carta">
                         {% endif %}
                     {% endfor %}
@@ -82,6 +84,11 @@
                 {% endif %}
             {% endif %}
             </div>
+            {% if bot.estado == -1 %}
+                <h2>{{bot.nome}} DEU FOLD, VOCÊ GANHOU!</h2>
+            {% elif jogador.estado == -1 %}
+                <h2>VOCÊ DEU FOLD, {{bot.nome}} GANHOU</h2>
+            {% endif %}
             {% if sala.rodada == 5 %}
                 {% if sala.vencedores %} <!-- acho que pode tirar isso -->
                 <h2>VENCEDOR FOI {{sala.vencedores[0][1].nome}} TENDO {{sala.lib[sala.vencedores[0][0].handenum]}}</h2>
@@ -102,9 +109,9 @@
                 {% endfor %}
             {% endif %}
         </div>
-        {% if sala.rodada == 5 %}
+        {% if sala.rodada == 5 or jogador.estado == -1 or bot.estado == -1 %}
         <form method="POST">
-            <button type="submit" name="escolha" value="FODASSE">CONTINUAR</button>
+            <button type="submit" name="escolha" value="FODASSE">JOGAR DE NOVO</button>
         </form>
         {% elif sala.rodada == 0 %}
         <form method="POST">
