@@ -3,6 +3,16 @@ import requests
 from itertools import combinations
 from pokerlib.enums import Rank, Suit 
 from pokerlib import HandParser
+import random
+
+# BUGS:
+# Fichas do jogador e bots sao globais e valem p todas as salas, o pot também pode acumular em algumas situações
+# Fold na ultima rodada não funciona
+
+# TO DO:
+# Bot apostar
+# Escolher valor da aposta
+
 
 
 app = Flask(__name__)
@@ -15,9 +25,17 @@ valores = {
             'T': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14
         }
 
-@app.route('/', methods = ['GET', 'POST'])
-def home():
-    salas[0].rodada = 0
+@app.route('/')
+def index():
+    return render_template('index.html')  ############## O arquivo HTML da tela inicial
+
+
+
+@app.route('/mesas', methods = ['GET', 'POST']) ################ primeira mudança mudei pra app rout para mesas pois index e a tela inicial estava home
+
+
+def home(): 
+    salas[0].rodada = -1 #
     if request.method == 'POST':
         nome = request.form.get("nome")
         tamanho = request.form.get("tamanho")
@@ -27,61 +45,67 @@ def home():
 
     return render_template('mesas.html', salas=salas, jogador=jogador, bot=bot)
 
+
+
 @app.route('/mesa', methods = ['GET', 'POST'])
 def entrarMesa(): 
-    # a numeração das rodadas ta dando merda - IMPORTANTE
-    # if salas[0].acabou: # quando o jogador da fold - REVER
-    #     #salas[0].final()
-    #     print(salas[0].rodada)
-    #     salas[0].rodada=0
+    if salas[0].rodada == 5 or jogador.estado == -1 or bot.estado == -1:
+        salas[0].rodada = -1
+    salas[0].rodada+=1
 
+    
     if salas[0].rodada == 0: # iniciar rodada
         salas[0].iniciar_rodada() 
-        print(salas[0].rodada)
+        print("rodada",salas[0].rodada)
         salas[0].rodada+=1
 
-    elif salas[0].rodada == 1: # pre-flop
+    if salas[0].rodada == 1: # pre-flop
         if request.method == "POST":
             escolha = request.form['escolha']
             salas[0].rodada_aposta(0,escolha,jogador) # botei 0 pq ta foda
-        print(salas[0].rodada)
-        salas[0].rodada+=1
+        print("rodada",salas[0].rodada)
+        #salas[0].rodada+=1
 
     elif salas[0].rodada == 2: # flop
         if request.method == "POST":
             escolha = request.form['escolha']
             salas[0].rodada_aposta(0,escolha,jogador) # botei 0 pq ta foda
-        print(salas[0].rodada)
-        salas[0].rodada+=1
+        print("rodada",salas[0].rodada)
+        #salas[0].rodada+=1
 
     elif salas[0].rodada == 3: # turn
         if request.method == "POST":
             escolha = request.form['escolha']
             salas[0].rodada_aposta(0,escolha,jogador) # botei 0 pq ta foda
-        print(salas[0].rodada)
-        salas[0].rodada+=1
+        print("rodada",salas[0].rodada)
+        #salas[0].rodada+=1
 
-    elif salas[0].rodada == 4: # river
+    elif salas[0].rodada == 4: # river e resultado
         if request.method == "POST":
             escolha = request.form['escolha']
             salas[0].rodada_aposta(0,escolha,jogador) # botei 0 pq ta foda
-        print(salas[0].rodada)
-        salas[0].rodada+=1
-        salas[0].final()
-        print(salas[0].rodada)
-        print(salas[0].vencedores)
-        #salas[0].rodada=0
-
-    elif salas[0].rodada == 5: # fim de jogo (resultado)
+        print("rodada",salas[0].rodada)
+        #salas[0].rodada+=1
         # salas[0].final()
         # print(salas[0].rodada)
         # print(salas[0].vencedores)
-        salas[0].rodada=0
+
+    elif salas[0].rodada == 5: # fim de jogo
+        salas[0].final()
+        print("rodada",salas[0].rodada)
+        print(salas[0].vencedores)
+        #salas[0].rodada=-1
+        #salas[0].rodada=0
 
     else:
         print("deu merda")
         # salas[0].rodada = 0 
 
+    if jogador.estado == -1 or bot.estado == -1:
+        salas[0].final()
+        salas[0].rodada-=1
+
+    print("estado", jogador.estado, bot.estado)
 
     return render_template('mesa.html', sala=salas[0], jogador=jogador, bot=bot)
 
@@ -100,7 +124,7 @@ class Player:
         self.fichas = chips
         self.cards = []
         self.indice_sala = -1 # acho que vai dar merda quando ele criar mais de uma sala
-        self.estado = -1 # 0 = "na rodada mas não jogou", 1 = "na rodada e ja jogou", -1 = "fora da rodada"
+        self.estado = 0 # 0 = "na rodada mas não jogou", 1 = "na rodada e ja jogou", -1 = "fora da rodada"
         self.e_bb = False # atributo novo que diz se é bb
         self.e_sb = False # atributo novo que diz se é sb
         self.aposta = 0 # atributo novo
@@ -134,7 +158,7 @@ class Player:
         print()
 
     # função nova
-    def aposta_pot(self): # não esta sendo usada, precisa usar
+    def aposta_pot(self): # não esta sendo usada, foi na raça msm
         # sala = salas[self.indice_sala] ANTIGO 
         sala = salas[0]
         self.fichas -= self.aposta
@@ -154,15 +178,15 @@ class Player:
         
         elif acao == 'FOLD':
             self.estado = -1
-            self.fichas -= self.aposta
-            sala.pot += self.aposta 
+            #self.fichas -= self.aposta
+            #sala.pot += self.aposta 
             self.aposta = 0
 
         elif acao == 'CHECK':
             self.estado = 1
             self.aposta = 0
 
-        # teste (funcao aposta_pot n aceitou)
+        # equivalente a funcao aposta_pot
         self.fichas -= self.aposta
         sala.pot += self.aposta
         self.aposta = 0
@@ -179,11 +203,17 @@ class PokerRoom:
         self.small_blind = small_blind
         self.players = []
 
-        self.rodada = 0
+        self.rodada = -1 # antes era 0
         self.acabou = False
         self.vencedores = []
         self.lib = {0 : "HIGHCARD", 1: "ONEPAIR", 2:"TWOPAIR",3: "THREEOFAKIND", 4 : "STRAIGHT", 5: "FLUSH", 6: "FULLHOUSE", 7: "FOUROFAKIND", 8: "STRAIGHTFLUSH"}
-
+        self.biblis = {
+            'A': Rank.ACE, '2': Rank.TWO, '3': Rank.THREE, 
+            '4': Rank.FOUR, '5': Rank.FIVE, '6': Rank.SIX,
+            '7': Rank.SEVEN, '8': Rank.EIGHT, '9': Rank.NINE,
+            '0': Rank.TEN, 'J': Rank.JACK, 'Q': Rank.QUEEN,
+            'K': Rank.KING, 'S': Suit.SPADE, 'C':Suit.CLUB, 'H': Suit.HEART, 'D' : Suit.DIAMOND
+        }
 
         self.deck = requests.get("https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1").json()['deck_id']
         self.pot = 0
@@ -215,13 +245,7 @@ class PokerRoom:
 
 
     def verificar_ganhadores(self):
-        biblis = {
-            'A': Rank.ACE, '2': Rank.TWO, '3': Rank.THREE, 
-            '4': Rank.FOUR, '5': Rank.FIVE, '6': Rank.SIX,
-            '7': Rank.SEVEN, '8': Rank.EIGHT, '9': Rank.NINE,
-            '0': Rank.TEN, 'J': Rank.JACK, 'Q': Rank.QUEEN,
-            'K': Rank.KING, 'S': Suit.SPADE, 'C':Suit.CLUB, 'H': Suit.HEART, 'D' : Suit.DIAMOND
-        }
+        
         cartas_mesa = self.flop + self.turn + self.river
         vetor_resposta = []
 
@@ -230,7 +254,7 @@ class PokerRoom:
             card_strings = [card['code'] for card in all_cards]
             cartas_jogador = HandParser([])
             for card in card_strings:
-                carta = [(biblis[card[0]],biblis[card[1]])]
+                carta = [(self.biblis[card[0]],self.biblis[card[1]])]
                 cartas_jogador += carta
             vetor_resposta.append((cartas_jogador, player))
         vetor_resposta = sorted(vetor_resposta, reverse=True)
@@ -250,12 +274,83 @@ class PokerRoom:
         return None
 
     # função nova 
-    def rodada_aposta(self,maior,acao,player,inicial=False): # voltar com algumas coisas do victao antigas
+    def rodada_aposta(self,maior,acao,player,inicial=False): # voltar com algumas coisas do victao antigas, principalmente parte do big e small blind
+        
+        #{0 : "HIGHCARD", 1: "ONEPAIR", 2:"TWOPAIR",3: "THREEOFAKIND", 4 : "STRAIGHT", 5: "FLUSH", 6: "FULLHOUSE", 7: "FOUROFAKIND", 8: "STRAIGHTFLUSH"}
+        all_cards = bot.cards + []
+        if self.rodada >= 2:
+            all_cards += self.flop
+        if self.rodada >= 3:
+            all_cards += self.turn
+        if self.rodada >= 4:
+            all_cards += self.river
+        
+        card_strings = [card['code'] for card in all_cards]
+        cartas_bot = HandParser([])
+        for card in card_strings:
+            carta = [(self.biblis[card[0]],self.biblis[card[1]])]
+            cartas_bot += carta
+        combo = cartas_bot.handenum
+        print("combo:", combo)
+        # ver se é bom ou nao o combo, combo já é "HIGHCARD", "ONEPAIR", etc.
+
+
+        chance = random.randrange(1, 11) # 1 a 10
+
         if acao == "BET":
             #valor = int(input("valor: "))
             valor = self.big_blind # valor padrao de aposta
             player.realizar_acao("BET",valor)
-            bot.realizar_acao("CALL", valor)
+            if self.rodada == 1:
+                bot.realizar_acao("CALL", valor)
+            elif self.rodada == 2:
+                if combo >= 2:
+                    bot.realizar_acao("CALL", valor)
+                elif combo == 1:
+                    if chance >= 5:
+                        bot.realizar_acao("CALL", valor)
+                    else:
+                        bot.realizar_acao("FOLD", valor)
+                elif combo == 0:
+                    if chance >= 8:
+                        bot.realizar_acao("CALL", valor)
+                    else:
+                        bot.realizar_acao("FOLD", valor)
+            elif self.rodada == 3:
+                if combo >= 3:
+                    bot.realizar_acao("CALL", valor)
+                elif combo == 2:
+                    if chance >= 2:
+                        bot.realizar_acao("CALL", valor)
+                    else:
+                        bot.realizar_acao("FOLD", valor)
+                elif combo == 1:
+                    if chance >= 5:
+                        bot.realizar_acao("CALL", valor)
+                    else:
+                        bot.realizar_acao("FOLD", valor)
+                elif combo == 0:
+                    if chance >= 9:
+                        bot.realizar_acao("CALL", valor)
+                    else:
+                        bot.realizar_acao("FOLD", valor)
+            elif self.rodada == 4:
+                if combo >= 3:
+                    bot.realizar_acao("CALL", valor)
+                elif combo == 2:
+                    if chance >= 3:
+                        bot.realizar_acao("CALL", valor)
+                    else:
+                        bot.realizar_acao("FOLD", valor)
+                elif combo == 1:
+                    if chance >= 5:
+                        bot.realizar_acao("CALL", valor)
+                    else:
+                        bot.realizar_acao("FOLD", valor)
+                elif combo == 0:
+                    bot.realizar_acao("FOLD", valor)
+
+            
             
             #maior += valor
 
@@ -325,16 +420,21 @@ class PokerRoom:
     
 
     def final(self):
-        # Após o river, verificar o vencedor (tem que ver a parada do empate)
-        self.vencedores = self.verificar_ganhadores()
 
-        # imprime o que o(s) vencedor(es) tem
+        if jogador.estado == -1:
+            bot.fichas += self.pot
+            #jogador.estado = 0
+        elif bot.estado == -1:
+            jogador.fichas += self.pot
+            #bot.estado = 0
+        else:
+            self.vencedores = self.verificar_ganhadores()
         
-        for winner in self.vencedores:
-            print(f"VENCEDOR FOI {winner[1].nome} tendo {self.lib[winner[0].handenum]}\n\n")
+            for winner in self.vencedores:
+                print(f"VENCEDOR FOI {winner[1].nome} tendo {self.lib[winner[0].handenum]}\n\n")
 
-        # da pra o vitorioso o pot, considerando que não temos empate
-        self.vencedores[0][1].fichas += self.pot
+            self.vencedores[0][1].fichas += self.pot
+
         self.pot = 0
         self.print_fichas()
 
