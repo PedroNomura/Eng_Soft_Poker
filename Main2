@@ -55,8 +55,8 @@ def entrarMesa():
     if salas[0].rodada == 5 or jogador.estado == -1 or bot.estado == -1:
         salas[0].rodada = -1
 
-    if salas[0].apostador == None:
-        salas[0].rodada+=1 # qnd for fazer p bot apostar tem q mudar isso, tvz jogar la p baixo e dps colocar o apostaBot(), tvz fazer um esquema de so aumentar a rodada se o apostador for None
+
+    salas[0].rodada+=1 # qnd for fazer p bot apostar tem q mudar isso, tvz jogar la p baixo e dps colocar o apostaBot(), tvz fazer um esquema de so aumentar a rodada se o apostador for None
 
     try:
         print("Apostador -", salas[0].apostador.nome)
