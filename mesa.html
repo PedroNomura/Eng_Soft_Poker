@@ -37,7 +37,6 @@
         <h1>Mesa: {{ sala.nome }}</h1>
         <div class="mesa-visual">
             <div class="cartas-bot" id="cadeira1">
-                {% if sala.rodada != 0 %}
                     <h2>Cartas do Bot</h2> 
                     {% for carta in bot.cards %}
                         {% if sala.rodada == 5 %}
@@ -47,7 +46,6 @@
                             <img src="/static/closed_card.png" alt="Carta Fechada" class="carta">
                         {% endif %}
                     {% endfor %}
-                {% endif %}
             </div>
         </div>
              
@@ -56,7 +54,6 @@
         </div>        
 
         <div class="cartas-comunitarias">
-            {% if sala.rodada != 0 %}
             <h2>Pot: {{sala.pot}}</h2>
             <h2>Cartas Comunitárias</h2>
             <div class="comunitarias">
@@ -82,7 +79,6 @@
                 <!-- Mostrar carta fechada -->
                 <img src="/static/closed_card.png" alt="Carta Fechada" class="carta">
                 {% endif %}
-            {% endif %}
             </div>
             {% if bot.estado == -1 %}
                 <h2>{{bot.nome}} DEU FOLD, VOCÊ GANHOU!</h2>
@@ -102,26 +98,25 @@
         </div>
 
         <div class="cartas-container">
-            {% if sala.rodada != 0 %}
-                <h2>Suas Cartas</h2>
-                {% for carta in jogador.cards %}
-                    <img src="{{ carta.image }}" alt="{{ carta.value }} of {{ carta.suit }}" class="carta">
-                {% endfor %}
-            {% endif %}
+            <h2>Suas Cartas</h2>
+            {% for carta in jogador.cards %}
+                <img src="{{ carta.image }}" alt="{{ carta.value }} of {{ carta.suit }}" class="carta">
+            {% endfor %}
         </div>
         {% if sala.rodada == 5 or jogador.estado == -1 or bot.estado == -1 %}
         <form method="POST">
             <button type="submit" name="escolha" value="FODASSE">JOGAR DE NOVO</button>
         </form>
-        {% elif sala.rodada == 0 %}
-        <form method="POST">
-            <button type="submit" name="escolha" value="FODASSE">JOGAR DE NOVO</button>
-        </form>
+        
         {% else %}
         <form method="POST">
-            <button type="submit" name="escolha" value="CHECK">CHECK</button>
-            <button type="submit" name="escolha" value="BET">BET</button>
-            <button type="submit" name="escolha" value="CALL">CALL</button>
+            {% if sala.apostador == bot %}
+                <button type="submit" name="escolha" value="CALL">CALL</button>
+                <!-- <button type="submit" name="escolha" value="RAISE">RAISE</button> -->
+            {% else %}
+                <button type="submit" name="escolha" value="CHECK">CHECK</button>
+                <button type="submit" name="escolha" value="BET">BET</button>
+            {% endif %}
             <button type="submit" name="escolha" value="FOLD">FOLD</button>
         </form>
         {% endif %}
